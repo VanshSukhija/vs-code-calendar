@@ -2,25 +2,30 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
+let startTime: string = new Date().toLocaleString();
+
+function calculateTimeDifference(startTime: string, endTime: string): number {
+	let start: Date = new Date(startTime);
+	let end: Date = new Date(endTime);
+	let difference: number = end.getTime() - start.getTime();
+
+	return difference;
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+	startTime = new Date().toLocaleString();
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "vs-code-calendar" is now active!');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('vs-code-calendar.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from VS Code Calendar!');
-	});
-
-	context.subscriptions.push(disposable);
+	vscode.window.showInformationMessage(`Start Time: ${startTime}`);
 }
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+	let endTime: string = new Date().toLocaleString();
+	let difference: number = calculateTimeDifference(startTime, endTime);
+
+	console.log(`The extension was active for ${difference} milliseconds.`);
+}

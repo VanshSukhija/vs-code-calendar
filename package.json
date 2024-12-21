@@ -7,9 +7,10 @@
     "vscode": "^1.95.3"
   },
   "categories": [
-    "Other"
+    "Data Science",
+    "Visualization"
   ],
-  "activationEvents": [],
+  "activationEvents": ["onStartupFinished"],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
