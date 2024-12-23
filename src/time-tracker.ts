@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
-import { TimeTrackerDataObject, WorkspaceTime } from "./time-tracker.d";
+import * as vscode from 'vscode';
+import { TimeTrackerDataObject, WorkspaceTime } from './time-tracker.d';
 
 export default class TimeTracker {
   private static instance: TimeTracker;
@@ -31,7 +31,7 @@ export default class TimeTracker {
   public saveTimeDifference(context: vscode.ExtensionContext): void {
     const difference: number = this.calculateTimeDifference();
     const timeTrackerDataObjectArray: TimeTrackerDataObject[] =
-      context.globalState.get("vs-code-calendar-time-tracker", []);
+      context.globalState.get('vs-code-calendar-time-tracker', []);
     const today: string = new Date().toLocaleDateString();
 
     const timeTrackerDataObject: TimeTrackerDataObject | undefined =
@@ -40,7 +40,7 @@ export default class TimeTracker {
     if (timeTrackerDataObject) {
       const workspaceTimeObject: WorkspaceTime | undefined =
         timeTrackerDataObject.data.find(
-          (data) => data.workspace === (vscode.workspace.name ?? "undefined"),
+          (data) => data.workspace === (vscode.workspace.name ?? 'undefined')
         );
 
       if (workspaceTimeObject) {
@@ -48,7 +48,7 @@ export default class TimeTracker {
       } else {
         timeTrackerDataObject.data.push({
           timeTracked: difference,
-          workspace: vscode.workspace.name ?? "undefined",
+          workspace: vscode.workspace.name ?? 'undefined',
         });
       }
     } else {
@@ -57,15 +57,15 @@ export default class TimeTracker {
         data: [
           {
             timeTracked: difference,
-            workspace: vscode.workspace.name ?? "undefined",
+            workspace: vscode.workspace.name ?? 'undefined',
           },
         ],
       });
     }
 
     context.globalState.update(
-      "vs-code-calendar-time-tracker",
-      timeTrackerDataObjectArray,
+      'vs-code-calendar-time-tracker',
+      timeTrackerDataObjectArray
     );
   }
 }

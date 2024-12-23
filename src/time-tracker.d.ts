@@ -1,4 +1,4 @@
-import * as vscode from "vscode";
+import * as vscode from 'vscode';
 
 export type TimeTrackerDataObject = {
   date: string;
@@ -12,5 +12,6 @@ export type WorkspaceTime = {
 
 export interface TimeTracker {
   calculateTimeDifference(): number;
+  resetTracker(): void;
   saveTimeDifference(context: vscode.ExtensionContext): void;
 }
