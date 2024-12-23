@@ -43,7 +43,8 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vscode-test",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "pre-commit": "lint-staged"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
