@@ -13,5 +13,10 @@ export type WorkspaceTime = {
 export interface TimeTracker {
   calculateTimeDifference(): number;
   resetTracker(): void;
+  saveTimeDifferenceHelper(
+    context: vscode.ExtensionContext,
+    difference: number,
+    date: string
+  ): void;
   saveTimeDifference(context: vscode.ExtensionContext): void;
 }

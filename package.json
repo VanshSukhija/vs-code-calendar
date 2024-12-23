@@ -11,6 +11,10 @@
     "Visualization"
   ],
   "publisher": "Vansh Sukhija",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VanshSukhija/vs-code-calendar"
+  },
   "activationEvents": [
     "onStartupFinished"
   ],

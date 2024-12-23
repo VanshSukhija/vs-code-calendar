@@ -1,12 +1,14 @@
 import * as vscode from 'vscode';
 import { TimeTrackerDataObject, WorkspaceTime } from './time-tracker.d';
 
+const msInDay: number = 86400000;
+
 export default class TimeTracker {
   private static instance: TimeTracker;
-  private startTime: string;
+  private startTime: Date;
 
   private constructor() {
-    this.startTime = new Date().toLocaleString();
+    this.startTime = new Date();
   }
 
   public static getInstance(): TimeTracker {
@@ -17,25 +19,28 @@ export default class TimeTracker {
     return TimeTracker.instance;
   }
 
-  private calculateTimeDifference(): number {
-    const start: Date = new Date(this.startTime);
-    const end: Date = new Date();
-    const difference: number = end.getTime() - start.getTime();
+  private calculateTimeDifference(start: string, end: string): number {
+    const startTimeStamp: Date = new Date(start);
+    const endTimeStamp: Date = new Date(end);
+    const difference: number =
+      endTimeStamp.getTime() - startTimeStamp.getTime();
     return difference;
   }
 
   public resetTracker(): void {
-    this.startTime = new Date().toLocaleString();
+    this.startTime = new Date();
   }
 
-  public saveTimeDifference(context: vscode.ExtensionContext): void {
-    const difference: number = this.calculateTimeDifference();
+  private saveTimeDifferenceHelper(
+    context: vscode.ExtensionContext,
+    difference: number,
+    date: string
+  ): void {
     const timeTrackerDataObjectArray: TimeTrackerDataObject[] =
       context.globalState.get('vs-code-calendar-time-tracker', []);
-    const today: string = new Date().toLocaleDateString();
 
     const timeTrackerDataObject: TimeTrackerDataObject | undefined =
-      timeTrackerDataObjectArray.find((data) => data.date === today);
+      timeTrackerDataObjectArray.find((data) => data.date === date);
 
     if (timeTrackerDataObject) {
       const workspaceTimeObject: WorkspaceTime | undefined =
@@ -53,7 +58,7 @@ export default class TimeTracker {
       }
     } else {
       timeTrackerDataObjectArray.push({
-        date: today,
+        date: date,
         data: [
           {
             timeTracked: difference,
@@ -66,6 +71,56 @@ export default class TimeTracker {
     context.globalState.update(
       'vs-code-calendar-time-tracker',
       timeTrackerDataObjectArray
+    );
+  }
+
+  public saveTimeDifference(context: vscode.ExtensionContext): void {
+    const endTime: Date = new Date();
+
+    if (this.startTime.getDate() !== endTime.getDate()) {
+      const difference: number = this.calculateTimeDifference(
+        this.startTime.toLocaleString(),
+        new Date(
+          this.startTime.getFullYear(),
+          this.startTime.getMonth(),
+          this.startTime.getDate(),
+          23,
+          59,
+          59
+        ).toLocaleString() // 'MM/DD/YYYY, 23:59:59 PM'
+      );
+
+      this.saveTimeDifferenceHelper(
+        context,
+        difference,
+        this.startTime.toLocaleDateString() // 'MM/DD/YYYY'
+      );
+
+      this.startTime.setDate(this.startTime.getDate() + 1);
+      this.startTime.setHours(0, 0, 0);
+    }
+
+    while (endTime.getTime() - this.startTime.getTime() >= msInDay) {
+      const difference: number = msInDay;
+
+      this.saveTimeDifferenceHelper(
+        context,
+        difference,
+        this.startTime.toLocaleDateString() // 'MM/DD/YYYY'
+      );
+
+      this.startTime.setDate(this.startTime.getDate() + 1);
+    }
+
+    const difference: number = this.calculateTimeDifference(
+      this.startTime.toLocaleString(), // 'MM/DD/YYYY, HH:MM:SS PM'
+      endTime.toLocaleString() // 'MM/DD/YYYY, HH:MM:SS PM'
+    );
+
+    this.saveTimeDifferenceHelper(
+      context,
+      difference,
+      this.startTime.toLocaleDateString() // 'MM/DD/YYYY'
     );
   }
 }
