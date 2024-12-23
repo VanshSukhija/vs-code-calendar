@@ -24,7 +24,7 @@
     ]
   },
   "lint-staged": {
-    "*": "prettier src --write"
+    "src/*": "prettier src/* --write"
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
