@@ -8,9 +8,7 @@ import TimeTracker from "./time-tracker";
 export async function activate(context: vscode.ExtensionContext) {
   const timeTracker: TimeTracker = TimeTracker.getInstance();
 
-  console.log(
-    'Congratulations, your extension "vs-code-calendar" is now active!'
-  );
+  console.log('Congratulations, your extension "vs-code-calendar" is now active!');
 
   vscode.window.onDidChangeWindowState((e) => {
     if (e.focused) {
@@ -20,7 +18,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  vscode.window.showInformationMessage('VS Code Calendar is active!');
+  vscode.window.showInformationMessage("VS Code Calendar is active!");
 }
 
 // This method is called when your extension is deactivated

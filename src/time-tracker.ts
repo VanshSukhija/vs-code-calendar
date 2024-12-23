@@ -40,7 +40,7 @@ export default class TimeTracker {
     if (timeTrackerDataObject) {
       const workspaceTimeObject: WorkspaceTime | undefined =
         timeTrackerDataObject.data.find(
-          (data) => data.workspace === (vscode.workspace.name ?? "undefined")
+          (data) => data.workspace === (vscode.workspace.name ?? "undefined"),
         );
 
       if (workspaceTimeObject) {
@@ -65,7 +65,7 @@ export default class TimeTracker {
 
     context.globalState.update(
       "vs-code-calendar-time-tracker",
-      timeTrackerDataObjectArray
+      timeTrackerDataObjectArray,
     );
   }
 }
