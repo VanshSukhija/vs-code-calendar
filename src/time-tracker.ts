@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import { TimeTrackerDataObject, WorkspaceTime } from './time-tracker.d';
-
-const msInDay: number = 86400000;
+import { ExtensionGlobalState } from './index.d';
+import { msInDay, extensionGlobalStateKey } from './utils/constants';
 
 export default class TimeTracker {
   private static instance: TimeTracker;
+  private trackerGlobalStateKey: string = 'time-tracker';
   private startTime: Date;
 
   private constructor() {
@@ -19,11 +20,14 @@ export default class TimeTracker {
     return TimeTracker.instance;
   }
 
+  public get getTrackerGlobalStateKey(): string {
+    return this.trackerGlobalStateKey;
+  }
+
   private calculateTimeDifference(start: string, end: string): number {
     const startTimeStamp: Date = new Date(start);
     const endTimeStamp: Date = new Date(end);
-    const difference: number =
-      endTimeStamp.getTime() - startTimeStamp.getTime();
+    const difference: number = endTimeStamp.getTime() - startTimeStamp.getTime();
     return difference;
   }
 
@@ -36,42 +40,48 @@ export default class TimeTracker {
     difference: number,
     date: string
   ): void {
-    const timeTrackerDataObjectArray: TimeTrackerDataObject[] =
-      context.globalState.get('vs-code-calendar-time-tracker', []);
+    if (!vscode.workspace.name) {
+      return;
+    }
 
-    const timeTrackerDataObject: TimeTrackerDataObject | undefined =
+    const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
+      extensionGlobalStateKey,
+      Object()
+    );
+
+    const timeTrackerDataObjectArray: TimeTrackerDataObject[] =
+      extensionGlobalState[this.trackerGlobalStateKey];
+
+    const trackerObjectWithSameDate: TimeTrackerDataObject | undefined =
       timeTrackerDataObjectArray.find((data) => data.date === date);
 
-    if (timeTrackerDataObject) {
-      const workspaceTimeObject: WorkspaceTime | undefined =
-        timeTrackerDataObject.data.find(
-          (data) => data.workspace === (vscode.workspace.name ?? 'undefined')
+    if (trackerObjectWithSameDate) {
+      const dateObjectWithUserWorkspace: WorkspaceTime | undefined =
+        trackerObjectWithSameDate.workspaces.find(
+          (data) => data.workspace === vscode.workspace.name
         );
 
-      if (workspaceTimeObject) {
-        workspaceTimeObject.timeTracked += difference;
+      if (dateObjectWithUserWorkspace) {
+        dateObjectWithUserWorkspace.timeTracked += difference;
       } else {
-        timeTrackerDataObject.data.push({
+        trackerObjectWithSameDate.workspaces.push({
           timeTracked: difference,
-          workspace: vscode.workspace.name ?? 'undefined',
+          workspace: vscode.workspace.name,
         });
       }
     } else {
       timeTrackerDataObjectArray.push({
         date: date,
-        data: [
+        workspaces: [
           {
             timeTracked: difference,
-            workspace: vscode.workspace.name ?? 'undefined',
+            workspace: vscode.workspace.name,
           },
         ],
       });
     }
 
-    context.globalState.update(
-      'vs-code-calendar-time-tracker',
-      timeTrackerDataObjectArray
-    );
+    context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
   }
 
   public saveTimeDifference(context: vscode.ExtensionContext): void {

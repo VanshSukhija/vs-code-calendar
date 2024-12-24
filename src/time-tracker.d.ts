@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 export type TimeTrackerDataObject = {
   date: string;
-  data: WorkspaceTime[];
+  workspaces: WorkspaceTime[];
 };
 
 export type WorkspaceTime = {
@@ -11,6 +11,7 @@ export type WorkspaceTime = {
 };
 
 export interface TimeTracker {
+  getTrackerGlobalStateKey(): string;
   calculateTimeDifference(): number;
   resetTracker(): void;
   saveTimeDifferenceHelper(
