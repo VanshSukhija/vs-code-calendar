@@ -3,40 +3,72 @@
 import * as vscode from 'vscode';
 import { initExtensionGlobalState } from './initExtensionGlobalState';
 import TimeTracker from './time-tracker';
-import { resetExtensionGlobalState } from './utils/flags';
+import { ITimeTracker } from './time-tracker.d';
+import {
+  resetExtensionGlobalState,
+  startWithEmptyGlobalState,
+} from './utils/flags';
 import { extensionGlobalStateKey } from './utils/constants';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
+  if (startWithEmptyGlobalState) {
+    context.globalState.update(extensionGlobalStateKey, undefined);
+  }
+
   initExtensionGlobalState(context);
 
-  const timeTracker: TimeTracker = TimeTracker.getInstance();
+  const timeTracker: ITimeTracker = TimeTracker.getInstance();
 
-  console.log('Congratulations, your extension "vs-code-calendar" is now active!');
+  console.log(
+    'Congratulations, your extension "vs-code-calendar" is now active!'
+  );
 
-  vscode.window.onDidChangeWindowState((e) => {
-    if (e.focused) {
-      timeTracker.resetTracker();
-    } else {
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(() => {
       timeTracker.saveTimeDifference(context);
-    }
-  });
+      timeTracker.resetTracker();
+    })
+  );
 
-  vscode.window.showInformationMessage('VS Code Calendar is active!');
+  context.subscriptions.push(
+    vscode.window.onDidChangeWindowState((e) => {
+      if (e.focused) {
+        timeTracker.resetTracker();
+      } else {
+        timeTracker.saveTimeDifference(context);
+      }
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('vs-code-calendar.saveBeforeClose', () => {
+      timeTracker.saveTimeDifference(context);
+    })
+  );
 
   if (resetExtensionGlobalState) {
     context.subscriptions.push(
-      vscode.commands.registerCommand('vs-code-calendar.resetExtensionGlobalState', () => {
-        context.globalState.update(extensionGlobalStateKey, Object());
-      })
+      vscode.commands.registerCommand(
+        'vs-code-calendar.resetExtensionGlobalState',
+        () => {
+          context.globalState.update(extensionGlobalStateKey, undefined);
+        }
+      )
     );
   }
+
+  vscode.window.showInformationMessage('VS Code Calendar is active!');
 }
 
 // This method is called when your extension is deactivated
 export function deactivate() {
+  vscode.commands.executeCommand('vs-code-calendar.saveBeforeClose');
+
   if (resetExtensionGlobalState) {
-    vscode.commands.executeCommand('vs-code-calendar.resetExtensionGlobalState');
+    vscode.commands.executeCommand(
+      'vs-code-calendar.resetExtensionGlobalState'
+    );
   }
 }

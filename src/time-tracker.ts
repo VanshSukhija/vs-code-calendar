@@ -1,18 +1,25 @@
 import * as vscode from 'vscode';
-import { TimeTrackerDataObject, WorkspaceTime } from './time-tracker.d';
+import {
+  ITimeTracker,
+  LanguageTime,
+  TimeTrackerDataObject,
+  WorkspaceTime,
+} from './time-tracker.d';
 import { ExtensionGlobalState } from './index.d';
 import { msInDay, extensionGlobalStateKey } from './utils/constants';
 
-export default class TimeTracker {
-  private static instance: TimeTracker;
-  private trackerGlobalStateKey: string = 'time-tracker';
+export default class TimeTracker implements ITimeTracker {
+  private static instance: ITimeTracker;
+  private static trackerGlobalStateKey: string = 'time-tracker';
   private startTime: Date;
+  private languageId: string;
 
   private constructor() {
     this.startTime = new Date();
+    this.languageId = vscode.window.activeTextEditor?.document.languageId ?? '';
   }
 
-  public static getInstance(): TimeTracker {
+  public static getInstance(): ITimeTracker {
     if (!TimeTracker.instance) {
       TimeTracker.instance = new TimeTracker();
     }
@@ -20,23 +27,26 @@ export default class TimeTracker {
     return TimeTracker.instance;
   }
 
-  public get getTrackerGlobalStateKey(): string {
+  public static get getTrackerGlobalStateKey(): string {
     return this.trackerGlobalStateKey;
   }
 
   private calculateTimeDifference(start: string, end: string): number {
     const startTimeStamp: Date = new Date(start);
     const endTimeStamp: Date = new Date(end);
-    const difference: number = endTimeStamp.getTime() - startTimeStamp.getTime();
+    const difference: number =
+      endTimeStamp.getTime() - startTimeStamp.getTime();
     return difference;
   }
 
   public resetTracker(): void {
     this.startTime = new Date();
+    this.languageId = vscode.window.activeTextEditor?.document.languageId ?? '';
   }
 
   private saveTimeDifferenceHelper(
     context: vscode.ExtensionContext,
+    languageId: string,
     difference: number,
     date: string
   ): void {
@@ -50,7 +60,7 @@ export default class TimeTracker {
     );
 
     const timeTrackerDataObjectArray: TimeTrackerDataObject[] =
-      extensionGlobalState[this.trackerGlobalStateKey];
+      extensionGlobalState[TimeTracker.trackerGlobalStateKey];
 
     const trackerObjectWithSameDate: TimeTrackerDataObject | undefined =
       timeTrackerDataObjectArray.find((data) => data.date === date);
@@ -62,11 +72,28 @@ export default class TimeTracker {
         );
 
       if (dateObjectWithUserWorkspace) {
-        dateObjectWithUserWorkspace.timeTracked += difference;
+        const workspaceObjectWithSameLanguage: LanguageTime | undefined =
+          dateObjectWithUserWorkspace.languages.find(
+            (data) => data.languageId === languageId
+          );
+
+        if (workspaceObjectWithSameLanguage) {
+          workspaceObjectWithSameLanguage.timeTracked += difference;
+        } else {
+          dateObjectWithUserWorkspace.languages.push({
+            languageId: languageId,
+            timeTracked: difference,
+          });
+        }
       } else {
         trackerObjectWithSameDate.workspaces.push({
-          timeTracked: difference,
           workspace: vscode.workspace.name,
+          languages: [
+            {
+              languageId: languageId,
+              timeTracked: difference,
+            },
+          ],
         });
       }
     } else {
@@ -74,8 +101,13 @@ export default class TimeTracker {
         date: date,
         workspaces: [
           {
-            timeTracked: difference,
             workspace: vscode.workspace.name,
+            languages: [
+              {
+                languageId: languageId,
+                timeTracked: difference,
+              },
+            ],
           },
         ],
       });
@@ -85,15 +117,21 @@ export default class TimeTracker {
   }
 
   public saveTimeDifference(context: vscode.ExtensionContext): void {
+    if (this.languageId === '') {
+      return;
+    }
+
+    const startTime: Date = this.startTime;
+    const languageId: string = this.languageId;
     const endTime: Date = new Date();
 
-    if (this.startTime.getDate() !== endTime.getDate()) {
+    if (startTime.getDate() !== endTime.getDate()) {
       const difference: number = this.calculateTimeDifference(
-        this.startTime.toLocaleString(),
+        startTime.toLocaleString(),
         new Date(
-          this.startTime.getFullYear(),
-          this.startTime.getMonth(),
-          this.startTime.getDate(),
+          startTime.getFullYear(),
+          startTime.getMonth(),
+          startTime.getDate(),
           23,
           59,
           59
@@ -102,35 +140,40 @@ export default class TimeTracker {
 
       this.saveTimeDifferenceHelper(
         context,
+        languageId,
         difference,
-        this.startTime.toLocaleDateString() // 'MM/DD/YYYY'
+        startTime.toLocaleDateString() // 'MM/DD/YYYY'
       );
 
-      this.startTime.setDate(this.startTime.getDate() + 1);
-      this.startTime.setHours(0, 0, 0);
+      startTime.setDate(startTime.getDate() + 1);
+      startTime.setHours(0, 0, 0);
     }
 
-    while (endTime.getTime() - this.startTime.getTime() >= msInDay) {
+    while (endTime.getTime() - startTime.getTime() >= msInDay) {
       const difference: number = msInDay;
 
       this.saveTimeDifferenceHelper(
         context,
+        languageId,
         difference,
-        this.startTime.toLocaleDateString() // 'MM/DD/YYYY'
+        startTime.toLocaleDateString() // 'MM/DD/YYYY'
       );
 
-      this.startTime.setDate(this.startTime.getDate() + 1);
+      startTime.setDate(startTime.getDate() + 1);
     }
 
     const difference: number = this.calculateTimeDifference(
-      this.startTime.toLocaleString(), // 'MM/DD/YYYY, HH:MM:SS PM'
+      startTime.toLocaleString(), // 'MM/DD/YYYY, HH:MM:SS PM'
       endTime.toLocaleString() // 'MM/DD/YYYY, HH:MM:SS PM'
     );
 
     this.saveTimeDifferenceHelper(
       context,
+      languageId,
       difference,
-      this.startTime.toLocaleDateString() // 'MM/DD/YYYY'
+      startTime.toLocaleDateString() // 'MM/DD/YYYY'
     );
+
+    this.resetTracker();
   }
 }

@@ -6,18 +6,16 @@ export type TimeTrackerDataObject = {
 };
 
 export type WorkspaceTime = {
-  timeTracked: number;
   workspace: string;
+  languages: LanguageTime[];
 };
 
-export interface TimeTracker {
-  getTrackerGlobalStateKey(): string;
-  calculateTimeDifference(): number;
+export type LanguageTime = {
+  languageId: string;
+  timeTracked: number;
+};
+
+export interface ITimeTracker {
   resetTracker(): void;
-  saveTimeDifferenceHelper(
-    context: vscode.ExtensionContext,
-    difference: number,
-    date: string
-  ): void;
   saveTimeDifference(context: vscode.ExtensionContext): void;
 }
