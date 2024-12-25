@@ -6,7 +6,7 @@ import {
   WorkspaceTime,
 } from './time-tracker.d';
 import { ExtensionGlobalState } from './index.d';
-import { msInDay, extensionGlobalStateKey } from './utils/constants';
+import { secondsInADay, extensionGlobalStateKey } from './utils/constants';
 
 export default class TimeTracker implements ITimeTracker {
   private static instance: ITimeTracker;
@@ -34,9 +34,13 @@ export default class TimeTracker implements ITimeTracker {
   private calculateTimeDifference(start: string, end: string): number {
     const startTimeStamp: Date = new Date(start);
     const endTimeStamp: Date = new Date(end);
-    const difference: number =
-      endTimeStamp.getTime() - startTimeStamp.getTime();
-    return difference;
+    const differenceInSeconds: number =
+      (endTimeStamp.getTime() - startTimeStamp.getTime()) / 1000;
+
+    if (differenceInSeconds < 0) {
+      return 0;
+    }
+    return differenceInSeconds;
   }
 
   public resetTracker(): void {
@@ -47,7 +51,7 @@ export default class TimeTracker implements ITimeTracker {
   private saveTimeDifferenceHelper(
     context: vscode.ExtensionContext,
     languageId: string,
-    difference: number,
+    differenceInSeconds: number,
     date: string
   ): void {
     if (!vscode.workspace.name) {
@@ -78,11 +82,11 @@ export default class TimeTracker implements ITimeTracker {
           );
 
         if (workspaceObjectWithSameLanguage) {
-          workspaceObjectWithSameLanguage.timeTracked += difference;
+          workspaceObjectWithSameLanguage.timeTracked += differenceInSeconds;
         } else {
           dateObjectWithUserWorkspace.languages.push({
             languageId: languageId,
-            timeTracked: difference,
+            timeTracked: differenceInSeconds,
           });
         }
       } else {
@@ -91,7 +95,7 @@ export default class TimeTracker implements ITimeTracker {
           languages: [
             {
               languageId: languageId,
-              timeTracked: difference,
+              timeTracked: differenceInSeconds,
             },
           ],
         });
@@ -105,7 +109,7 @@ export default class TimeTracker implements ITimeTracker {
             languages: [
               {
                 languageId: languageId,
-                timeTracked: difference,
+                timeTracked: differenceInSeconds,
               },
             ],
           },
@@ -126,7 +130,7 @@ export default class TimeTracker implements ITimeTracker {
     const endTime: Date = new Date();
 
     if (startTime.getDate() !== endTime.getDate()) {
-      const difference: number = this.calculateTimeDifference(
+      const differenceInSeconds: number = this.calculateTimeDifference(
         startTime.toLocaleString(),
         new Date(
           startTime.getFullYear(),
@@ -141,7 +145,7 @@ export default class TimeTracker implements ITimeTracker {
       this.saveTimeDifferenceHelper(
         context,
         languageId,
-        difference,
+        differenceInSeconds,
         startTime.toLocaleDateString() // 'MM/DD/YYYY'
       );
 
@@ -149,20 +153,25 @@ export default class TimeTracker implements ITimeTracker {
       startTime.setHours(0, 0, 0);
     }
 
-    while (endTime.getTime() - startTime.getTime() >= msInDay) {
-      const difference: number = msInDay;
+    while (
+      this.calculateTimeDifference(
+        startTime.toLocaleString(),
+        endTime.toLocaleString()
+      ) >= secondsInADay
+    ) {
+      const differenceInSeconds: number = secondsInADay;
 
       this.saveTimeDifferenceHelper(
         context,
         languageId,
-        difference,
+        differenceInSeconds,
         startTime.toLocaleDateString() // 'MM/DD/YYYY'
       );
 
       startTime.setDate(startTime.getDate() + 1);
     }
 
-    const difference: number = this.calculateTimeDifference(
+    const differenceInSeconds: number = this.calculateTimeDifference(
       startTime.toLocaleString(), // 'MM/DD/YYYY, HH:MM:SS PM'
       endTime.toLocaleString() // 'MM/DD/YYYY, HH:MM:SS PM'
     );
@@ -170,7 +179,7 @@ export default class TimeTracker implements ITimeTracker {
     this.saveTimeDifferenceHelper(
       context,
       languageId,
-      difference,
+      differenceInSeconds,
       startTime.toLocaleDateString() // 'MM/DD/YYYY'
     );
 

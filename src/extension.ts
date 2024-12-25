@@ -12,7 +12,7 @@ import { extensionGlobalStateKey } from './utils/constants';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export async function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext) {
   if (startWithEmptyGlobalState) {
     context.globalState.update(extensionGlobalStateKey, undefined);
   }
