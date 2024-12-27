@@ -21,7 +21,7 @@ export default class TerminalCountTracker implements ICountTracker {
     return TerminalCountTracker.instance;
   }
 
-  public extractCoreCommands(shellCommand: string): string[] {
+  private extractCoreCommands(shellCommand: string): string[] {
     // Define separators for splitting commands
     const separators = /(?:&&|\|\||;|\||>|>>|<)/g;
 
@@ -102,5 +102,20 @@ export default class TerminalCountTracker implements ICountTracker {
     }
 
     context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
+  }
+
+  public subscribeToEvents(context: vscode.ExtensionContext): void {
+    context.subscriptions.push(
+      vscode.window.onDidOpenTerminal(() => {
+        TerminalCountTracker.getInstance().incrementCounter(context);
+      }),
+
+      vscode.window.onDidStartTerminalShellExecution((event) => {
+        const rawCommand: string = event.execution.commandLine.value;
+        this.extractCoreCommands(rawCommand).forEach((command) =>
+          TerminalCountTracker.getInstance().incrementCounter(context, command)
+        );
+      })
+    );
   }
 }

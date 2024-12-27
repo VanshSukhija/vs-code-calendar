@@ -69,4 +69,12 @@ export default class FileLanguageCountTracker implements ICountTracker {
 
     context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
   }
+
+  public subscribeToEvents(context: vscode.ExtensionContext): void {
+    context.subscriptions.push(
+      vscode.window.onDidChangeActiveTextEditor(() => {
+        FileLanguageCountTracker.getInstance().incrementCounter(context);
+      })
+    );
+  }
 }

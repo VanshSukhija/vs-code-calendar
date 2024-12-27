@@ -26,41 +26,12 @@ export function activate(context: vscode.ExtensionContext) {
   initExtensionGlobalState(context);
 
   TimeTracker.getInstance().subscribeToEvents(context);
+  FileLanguageCountTracker.getInstance().subscribeToEvents(context);
+  TerminalCountTracker.getInstance().subscribeToEvents(context);
+
   WorkspaceCountTracker.getInstance().incrementCounter(context);
   FileLanguageCountTracker.getInstance().incrementCounter(context);
   TerminalCountTracker.getInstance().incrementCounter(context);
-
-  context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor(() => {
-      TimeTracker.getInstance().saveTimeDifference(context);
-      TimeTracker.getInstance().resetTracker();
-
-      FileLanguageCountTracker.getInstance().incrementCounter(context);
-    })
-  );
-
-  context.subscriptions.push(
-    vscode.window.onDidOpenTerminal(() => {
-      TerminalCountTracker.getInstance().incrementCounter(context);
-    })
-  );
-
-  context.subscriptions.push(
-    vscode.window.onDidStartTerminalShellExecution((event) => {
-      const rawCommand: string = event.execution.commandLine.value;
-      TerminalCountTracker.getInstance()
-        .extractCoreCommands(rawCommand)
-        .forEach((command) =>
-          TerminalCountTracker.getInstance().incrementCounter(context, command)
-        );
-    })
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('vs-code-calendar.saveBeforeClose', () => {
-      TimeTracker.getInstance().saveTimeDifference(context);
-    })
-  );
 
   if (resetExtensionGlobalState) {
     context.subscriptions.push(

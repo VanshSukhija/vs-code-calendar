@@ -13,10 +13,12 @@ export default class TimeTracker implements ITimeTracker {
   public static trackerGlobalStateKey: string = 'time-tracker';
   private startTime: Date;
   private languageId: string;
+  private hasSavedTimeDifference: boolean;
 
   private constructor() {
     this.startTime = new Date();
     this.languageId = vscode.window.activeTextEditor?.document.languageId ?? '';
+    this.hasSavedTimeDifference = false;
   }
 
   public static getInstance(): TimeTracker {
@@ -42,6 +44,7 @@ export default class TimeTracker implements ITimeTracker {
   public resetTracker(): void {
     this.startTime = new Date();
     this.languageId = vscode.window.activeTextEditor?.document.languageId ?? '';
+    this.hasSavedTimeDifference = false;
   }
 
   private saveTimeDifferenceHelper(
@@ -107,7 +110,7 @@ export default class TimeTracker implements ITimeTracker {
   }
 
   public saveTimeDifference(context: vscode.ExtensionContext): void {
-    if (this.languageId === '') {
+    if (this.languageId === '' || this.hasSavedTimeDifference) {
       return;
     }
 
@@ -169,18 +172,30 @@ export default class TimeTracker implements ITimeTracker {
       startTime.toLocaleDateString() // 'MM/DD/YYYY'
     );
 
-    this.resetTracker();
+    this.hasSavedTimeDifference = true;
   }
 
   public subscribeToEvents(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscode.window.onDidChangeWindowState((event) => {
-        if (event.focused) {
+        if (event.active && event.focused) {
           TimeTracker.getInstance().resetTracker();
         } else {
           TimeTracker.getInstance().saveTimeDifference(context);
         }
-      })
+      }),
+
+      vscode.window.onDidChangeActiveTextEditor(() => {
+        TimeTracker.getInstance().saveTimeDifference(context);
+        TimeTracker.getInstance().resetTracker();
+      }),
+
+      vscode.commands.registerCommand(
+        'vs-code-calendar.saveBeforeClose',
+        () => {
+          TimeTracker.getInstance().saveTimeDifference(context);
+        }
+      )
     );
   }
 }
