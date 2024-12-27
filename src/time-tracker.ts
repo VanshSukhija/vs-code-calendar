@@ -5,12 +5,12 @@ import {
   TimeTrackerDataObject,
   WorkspaceTime,
 } from './time-tracker.d';
-import { ExtensionGlobalState } from './index.d';
+import { ExtensionGlobalState } from '.';
 import { secondsInADay, extensionGlobalStateKey } from './utils/constants';
 
 export default class TimeTracker implements ITimeTracker {
-  private static instance: ITimeTracker;
-  private static trackerGlobalStateKey: string = 'time-tracker';
+  private static instance: TimeTracker;
+  public static trackerGlobalStateKey: string = 'time-tracker';
   private startTime: Date;
   private languageId: string;
 
@@ -19,16 +19,12 @@ export default class TimeTracker implements ITimeTracker {
     this.languageId = vscode.window.activeTextEditor?.document.languageId ?? '';
   }
 
-  public static getInstance(): ITimeTracker {
+  public static getInstance(): TimeTracker {
     if (!TimeTracker.instance) {
       TimeTracker.instance = new TimeTracker();
     }
 
     return TimeTracker.instance;
-  }
-
-  public static get getTrackerGlobalStateKey(): string {
-    return this.trackerGlobalStateKey;
   }
 
   private calculateTimeDifference(start: string, end: string): number {
@@ -60,14 +56,22 @@ export default class TimeTracker implements ITimeTracker {
 
     const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
       extensionGlobalStateKey,
-      Object()
+      Object() as ExtensionGlobalState
     );
 
     const timeTrackerDataObjectArray: TimeTrackerDataObject[] =
       extensionGlobalState[TimeTracker.trackerGlobalStateKey];
-
     const trackerObjectWithSameDate: TimeTrackerDataObject | undefined =
       timeTrackerDataObjectArray.find((data) => data.date === date);
+
+    const newLanguageTime: LanguageTime = {
+      languageId: languageId,
+      timeTracked: differenceInSeconds,
+    };
+    const newWorkspaceTime: WorkspaceTime = {
+      workspace: vscode.workspace.name,
+      languages: [newLanguageTime],
+    };
 
     if (trackerObjectWithSameDate) {
       const dateObjectWithUserWorkspace: WorkspaceTime | undefined =
@@ -84,36 +88,15 @@ export default class TimeTracker implements ITimeTracker {
         if (workspaceObjectWithSameLanguage) {
           workspaceObjectWithSameLanguage.timeTracked += differenceInSeconds;
         } else {
-          dateObjectWithUserWorkspace.languages.push({
-            languageId: languageId,
-            timeTracked: differenceInSeconds,
-          });
+          dateObjectWithUserWorkspace.languages.push(newLanguageTime);
         }
       } else {
-        trackerObjectWithSameDate.workspaces.push({
-          workspace: vscode.workspace.name,
-          languages: [
-            {
-              languageId: languageId,
-              timeTracked: differenceInSeconds,
-            },
-          ],
-        });
+        trackerObjectWithSameDate.workspaces.push(newWorkspaceTime);
       }
     } else {
       timeTrackerDataObjectArray.push({
         date: date,
-        workspaces: [
-          {
-            workspace: vscode.workspace.name,
-            languages: [
-              {
-                languageId: languageId,
-                timeTracked: differenceInSeconds,
-              },
-            ],
-          },
-        ],
+        workspaces: [newWorkspaceTime],
       });
     }
 
@@ -184,5 +167,17 @@ export default class TimeTracker implements ITimeTracker {
     );
 
     this.resetTracker();
+  }
+
+  public subscribeToEvents(context: vscode.ExtensionContext): void {
+    context.subscriptions.push(
+      vscode.window.onDidChangeWindowState((event) => {
+        if (event.focused) {
+          TimeTracker.getInstance().resetTracker();
+        } else {
+          TimeTracker.getInstance().saveTimeDifference(context);
+        }
+      })
+    );
   }
 }

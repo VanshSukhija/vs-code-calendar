@@ -3,48 +3,62 @@
 import * as vscode from 'vscode';
 import { initExtensionGlobalState } from './initExtensionGlobalState';
 import TimeTracker from './time-tracker';
-import { ITimeTracker } from './time-tracker.d';
 import {
   resetExtensionGlobalState,
   startWithEmptyGlobalState,
 } from './utils/flags';
 import { extensionGlobalStateKey } from './utils/constants';
+import WorkspaceCountTracker from './workspace-count-tracker';
+import FileLanguageCountTracker from './file-language-count-tracker';
+import TerminalCountTracker from './terminal-count-tracker';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  console.log(
+    'Congratulations, your extension "vs-code-calendar" is now active!'
+  );
+
   if (startWithEmptyGlobalState) {
     context.globalState.update(extensionGlobalStateKey, undefined);
   }
 
   initExtensionGlobalState(context);
 
-  const timeTracker: ITimeTracker = TimeTracker.getInstance();
-
-  console.log(
-    'Congratulations, your extension "vs-code-calendar" is now active!'
-  );
+  TimeTracker.getInstance().subscribeToEvents(context);
+  WorkspaceCountTracker.getInstance().incrementCounter(context);
+  FileLanguageCountTracker.getInstance().incrementCounter(context);
+  TerminalCountTracker.getInstance().incrementCounter(context);
 
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor(() => {
-      timeTracker.saveTimeDifference(context);
-      timeTracker.resetTracker();
+      TimeTracker.getInstance().saveTimeDifference(context);
+      TimeTracker.getInstance().resetTracker();
+
+      FileLanguageCountTracker.getInstance().incrementCounter(context);
     })
   );
 
   context.subscriptions.push(
-    vscode.window.onDidChangeWindowState((e) => {
-      if (e.focused) {
-        timeTracker.resetTracker();
-      } else {
-        timeTracker.saveTimeDifference(context);
-      }
+    vscode.window.onDidOpenTerminal(() => {
+      TerminalCountTracker.getInstance().incrementCounter(context);
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.window.onDidStartTerminalShellExecution((event) => {
+      const rawCommand: string = event.execution.commandLine.value;
+      TerminalCountTracker.getInstance()
+        .extractCoreCommands(rawCommand)
+        .forEach((command) =>
+          TerminalCountTracker.getInstance().incrementCounter(context, command)
+        );
     })
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand('vs-code-calendar.saveBeforeClose', () => {
-      timeTracker.saveTimeDifference(context);
+      TimeTracker.getInstance().saveTimeDifference(context);
     })
   );
 

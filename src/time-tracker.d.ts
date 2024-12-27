@@ -18,4 +18,5 @@ export type LanguageTime = {
 export interface ITimeTracker {
   resetTracker(): void;
   saveTimeDifference(context: vscode.ExtensionContext): void;
+  subscribeToEvents(context: vscode.ExtensionContext): void;
 }
