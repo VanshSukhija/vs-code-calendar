@@ -9,6 +9,7 @@ export type CountTrackerDataObject = {
 
 export type WorkspaceCounter = {
   workspace: string;
+  rootPath: string;
   timesOpened: number;
 };
 

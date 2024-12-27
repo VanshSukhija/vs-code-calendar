@@ -22,11 +22,12 @@ export default class WorkspaceCountTracker implements ICountTracker {
   }
 
   public incrementCounter(context: vscode.ExtensionContext): void {
-    if (!vscode.workspace.name) {
+    if (!vscode.workspace.workspaceFolders) {
       return;
     }
 
-    const workspaceName: string = vscode.workspace.name;
+    const workspace: string = vscode.workspace.workspaceFolders[0].name;
+    const rootPath: string = vscode.workspace.workspaceFolders[0].uri.fsPath;
     const today: string = new Date().toLocaleDateString();
     const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
       extensionGlobalStateKey,
@@ -35,7 +36,8 @@ export default class WorkspaceCountTracker implements ICountTracker {
     const workspaceCountTrackerData: CountTrackerDataObject[] =
       extensionGlobalState[WorkspaceCountTracker.trackerGlobalStateKey];
     const newWorkspace: WorkspaceCounter = {
-      workspace: workspaceName,
+      workspace,
+      rootPath,
       timesOpened: 1,
     };
 
@@ -51,11 +53,11 @@ export default class WorkspaceCountTracker implements ICountTracker {
       }
       const workspaceCounter: WorkspaceCounter | undefined =
         workspaceCountTrackerDataForToday.workspaces.find(
-          (workspace) => workspace.workspace === workspaceName
+          (ws) => ws.workspace === workspace && ws.rootPath === rootPath
         );
 
       if (workspaceCounter) {
-        workspaceCounter.timesOpened++;
+        workspaceCounter.timesOpened += 1;
       } else {
         workspaceCountTrackerDataForToday.workspaces.push(newWorkspace);
       }

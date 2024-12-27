@@ -7,6 +7,7 @@ export type TimeTrackerDataObject = {
 
 export type WorkspaceTime = {
   workspace: string;
+  rootPath: string;
   languages: LanguageTime[];
 };
 

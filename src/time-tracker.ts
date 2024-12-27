@@ -50,10 +50,12 @@ export default class TimeTracker implements ITimeTracker {
     differenceInSeconds: number,
     date: string
   ): void {
-    if (!vscode.workspace.name) {
+    if (!vscode.workspace.workspaceFolders) {
       return;
     }
 
+    const workspace: string = vscode.workspace.workspaceFolders[0].name;
+    const rootPath: string = vscode.workspace.workspaceFolders[0].uri.fsPath;
     const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
       extensionGlobalStateKey,
       Object() as ExtensionGlobalState
@@ -69,14 +71,15 @@ export default class TimeTracker implements ITimeTracker {
       timeTracked: differenceInSeconds,
     };
     const newWorkspaceTime: WorkspaceTime = {
-      workspace: vscode.workspace.name,
+      workspace,
+      rootPath,
       languages: [newLanguageTime],
     };
 
     if (trackerObjectWithSameDate) {
       const dateObjectWithUserWorkspace: WorkspaceTime | undefined =
         trackerObjectWithSameDate.workspaces.find(
-          (data) => data.workspace === vscode.workspace.name
+          (data) => data.workspace === workspace && data.rootPath === rootPath
         );
 
       if (dateObjectWithUserWorkspace) {
