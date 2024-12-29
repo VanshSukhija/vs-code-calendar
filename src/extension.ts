@@ -1,16 +1,12 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { initExtensionGlobalState } from './initExtensionGlobalState';
-import TimeTracker from './time-tracker';
+import { initExtensionGlobalState, initTrackers } from './init';
 import {
   resetExtensionGlobalState,
   startWithEmptyGlobalState,
 } from './utils/flags';
 import { extensionGlobalStateKey } from './utils/constants';
-import WorkspaceCountTracker from './workspace-count-tracker';
-import FileLanguageCountTracker from './file-language-count-tracker';
-import TerminalCountTracker from './terminal-count-tracker';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -24,14 +20,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   initExtensionGlobalState(context);
-
-  TimeTracker.getInstance().subscribeToEvents(context);
-  FileLanguageCountTracker.getInstance().subscribeToEvents(context);
-  TerminalCountTracker.getInstance().subscribeToEvents(context);
-
-  WorkspaceCountTracker.getInstance().incrementCounter(context);
-  FileLanguageCountTracker.getInstance().incrementCounter(context);
-  TerminalCountTracker.getInstance().incrementCounter(context);
+  initTrackers(context);
 
   if (resetExtensionGlobalState) {
     context.subscriptions.push(

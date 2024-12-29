@@ -16,6 +16,7 @@ export type WorkspaceCounter = {
 export type FileLanguageCounter = {
   languageId: string;
   timesOpened: number;
+  linesModified: number;
 };
 
 export type TerminalCounter = {
@@ -29,5 +30,5 @@ export type TerminalCommandCounter = {
 };
 
 export interface ICountTracker {
-  incrementCounter(context: vscode.ExtensionContext): void;
+  initiateTracker(context: vscode.ExtensionContext): void;
 }

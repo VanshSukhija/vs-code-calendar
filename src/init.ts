@@ -36,3 +36,10 @@ export function initExtensionGlobalState(
     context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
   }
 }
+
+export function initTrackers(context: vscode.ExtensionContext): void {
+  TimeTracker.getInstance().initiateTracker(context);
+  WorkspaceCountTracker.getInstance().initiateTracker(context);
+  FileLanguageCountTracker.getInstance().initiateTracker(context);
+  TerminalCountTracker.getInstance().initiateTracker(context);
+}

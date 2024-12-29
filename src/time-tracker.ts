@@ -29,6 +29,10 @@ export default class TimeTracker implements ITimeTracker {
     return TimeTracker.instance;
   }
 
+  public initiateTracker(context: vscode.ExtensionContext): void {
+    TimeTracker.getInstance().subscribeToEvents(context);
+  }
+
   private calculateTimeDifference(start: string, end: string): number {
     const startTimeStamp: Date = new Date(start);
     const endTimeStamp: Date = new Date(end);
@@ -175,7 +179,7 @@ export default class TimeTracker implements ITimeTracker {
     this.hasSavedTimeDifference = true;
   }
 
-  public subscribeToEvents(context: vscode.ExtensionContext): void {
+  private subscribeToEvents(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscode.window.onDidChangeWindowState((event) => {
         if (event.active && event.focused) {

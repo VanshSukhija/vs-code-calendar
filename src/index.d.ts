@@ -8,3 +8,9 @@ export interface ExtensionGlobalState {
   'file-language-count-tracker': CountTrackerDataObject[];
   'terminal-count-tracker': CountTrackerDataObject[];
 }
+
+export interface TextDocumentLocal {
+  uri: string;
+  text: string;
+  languageId: string;
+}

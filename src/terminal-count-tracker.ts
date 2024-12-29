@@ -21,6 +21,13 @@ export default class TerminalCountTracker implements ICountTracker {
     return TerminalCountTracker.instance;
   }
 
+  public initiateTracker(context: vscode.ExtensionContext): void {
+    TerminalCountTracker.getInstance().subscribeToEvents(context);
+
+    // Increment the counter for the first time
+    TerminalCountTracker.getInstance().incrementCounter(context);
+  }
+
   private extractCoreCommands(shellCommand: string): string[] {
     // Define separators for splitting commands
     const separators = /(?:&&|\|\||;|\||>|>>|<)/g;
@@ -104,7 +111,7 @@ export default class TerminalCountTracker implements ICountTracker {
     context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
   }
 
-  public subscribeToEvents(context: vscode.ExtensionContext): void {
+  private subscribeToEvents(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscode.window.onDidOpenTerminal(() => {
         TerminalCountTracker.getInstance().incrementCounter(context);

@@ -21,13 +21,23 @@ export default class WorkspaceCountTracker implements ICountTracker {
     return WorkspaceCountTracker.instance;
   }
 
-  public incrementCounter(context: vscode.ExtensionContext): void {
-    if (!vscode.workspace.workspaceFolders) {
-      return;
-    }
+  public initiateTracker(context: vscode.ExtensionContext): void {
+    WorkspaceCountTracker.getInstance().subscribeToEvents(context);
 
-    const workspace: string = vscode.workspace.workspaceFolders[0].name;
-    const rootPath: string = vscode.workspace.workspaceFolders[0].uri.fsPath;
+    vscode.workspace.workspaceFolders?.forEach((workspaceFolder) => {
+      WorkspaceCountTracker.getInstance().incrementCounter(
+        context,
+        workspaceFolder
+      );
+    });
+  }
+
+  public incrementCounter(
+    context: vscode.ExtensionContext,
+    workspaceFolder: vscode.WorkspaceFolder
+  ): void {
+    const workspace: string = workspaceFolder.name;
+    const rootPath: string = workspaceFolder.uri.fsPath;
     const today: string = new Date().toLocaleDateString();
     const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
       extensionGlobalStateKey,
@@ -69,5 +79,18 @@ export default class WorkspaceCountTracker implements ICountTracker {
     }
 
     context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
+  }
+
+  private subscribeToEvents(context: vscode.ExtensionContext): void {
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+        event.added.forEach((workspaceFolder) => {
+          WorkspaceCountTracker.getInstance().incrementCounter(
+            context,
+            workspaceFolder
+          );
+        });
+      })
+    );
   }
 }
