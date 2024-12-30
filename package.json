@@ -22,8 +22,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "vs-code-calendar.helloWorld",
-        "title": "Hello World"
+        "command": "vs-code-calendar.changeName",
+        "title": "VS Code Calendar: Change Name"
       }
     ]
   },
@@ -61,5 +61,8 @@
     "npm-run-all": "^4.1.5",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "uuid": "^11.0.3"
   }
 }

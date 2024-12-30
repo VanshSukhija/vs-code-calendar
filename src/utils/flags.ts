@@ -1,3 +1,3 @@
-export const resetExtensionGlobalState: boolean = true;
+export const resetExtensionGlobalStateFlag: boolean = true;
 
-export const startWithEmptyGlobalState: boolean = true;
+export const startWithEmptyGlobalStateFlag: boolean = true;
