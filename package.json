@@ -24,6 +24,10 @@
       {
         "command": "vs-code-calendar.changeName",
         "title": "VS Code Calendar: Change Name"
+      },
+      {
+        "command": "vs-code-calendar.sendDataToServer",
+        "title": "VS Code Calendar: Send Data To Server"
       }
     ]
   },
@@ -63,6 +67,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "dotenv": "^16.4.7",
     "uuid": "^11.0.3"
   }
 }

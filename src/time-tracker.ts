@@ -7,30 +7,33 @@ import {
 } from './time-tracker.d';
 import { ExtensionGlobalState } from '.';
 import { secondsInADay, extensionGlobalStateKey } from './utils/constants';
+import TimeTrackerController from './time-tracker-controller';
 
 export default class TimeTracker implements ITimeTracker {
-  private static instance: TimeTracker;
-  public static trackerGlobalStateKey: string = 'time-tracker';
   private startTime: Date;
-  private languageId: string;
+  private workspaceFolder: vscode.WorkspaceFolder;
   private hasSavedTimeDifference: boolean;
 
-  private constructor() {
+  public constructor(workspaceFolder: vscode.WorkspaceFolder) {
     this.startTime = new Date();
-    this.languageId = vscode.window.activeTextEditor?.document.languageId ?? '';
+    this.workspaceFolder = workspaceFolder;
     this.hasSavedTimeDifference = false;
   }
 
-  public static getInstance(): TimeTracker {
-    if (!TimeTracker.instance) {
-      TimeTracker.instance = new TimeTracker();
-    }
-
-    return TimeTracker.instance;
+  public getWorkspaceFolder(): vscode.WorkspaceFolder {
+    return this.workspaceFolder;
   }
 
-  public initiateTracker(context: vscode.ExtensionContext): void {
-    TimeTracker.getInstance().subscribeToEvents(context);
+  public isTextEditorOfThisWorkspace(
+    textEditor: vscode.TextEditor | undefined
+  ): boolean {
+    if (!textEditor) {
+      return false;
+    }
+
+    return textEditor.document.uri.fsPath.startsWith(
+      this.workspaceFolder.uri.fsPath ?? ''
+    );
   }
 
   private calculateTimeDifference(start: string, end: string): number {
@@ -47,7 +50,6 @@ export default class TimeTracker implements ITimeTracker {
 
   public resetTracker(): void {
     this.startTime = new Date();
-    this.languageId = vscode.window.activeTextEditor?.document.languageId ?? '';
     this.hasSavedTimeDifference = false;
   }
 
@@ -57,19 +59,15 @@ export default class TimeTracker implements ITimeTracker {
     differenceInSeconds: number,
     date: string
   ): void {
-    if (!vscode.workspace.workspaceFolders) {
-      return;
-    }
-
-    const workspace: string = vscode.workspace.workspaceFolders[0].name;
-    const rootPath: string = vscode.workspace.workspaceFolders[0].uri.fsPath;
+    const workspace: string = this.workspaceFolder.name;
+    const rootPath: string = this.workspaceFolder.uri.fsPath;
     const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
       extensionGlobalStateKey,
       Object() as ExtensionGlobalState
     );
 
     const timeTrackerDataObjectArray: TimeTrackerDataObject[] =
-      extensionGlobalState[TimeTracker.trackerGlobalStateKey];
+      extensionGlobalState[TimeTrackerController.trackerGlobalStateKey];
     const trackerObjectWithSameDate: TimeTrackerDataObject | undefined =
       timeTrackerDataObjectArray.find((data) => data.date === date);
 
@@ -113,13 +111,15 @@ export default class TimeTracker implements ITimeTracker {
     context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
   }
 
-  public saveTimeDifference(context: vscode.ExtensionContext): void {
-    if (this.languageId === '' || this.hasSavedTimeDifference) {
+  public saveTimeDifference(
+    context: vscode.ExtensionContext,
+    languageId: string
+  ): void {
+    if (this.hasSavedTimeDifference) {
       return;
     }
 
     const startTime: Date = this.startTime;
-    const languageId: string = this.languageId;
     const endTime: Date = new Date();
 
     if (startTime.getDate() !== endTime.getDate()) {
@@ -177,29 +177,5 @@ export default class TimeTracker implements ITimeTracker {
     );
 
     this.hasSavedTimeDifference = true;
-  }
-
-  private subscribeToEvents(context: vscode.ExtensionContext): void {
-    context.subscriptions.push(
-      vscode.window.onDidChangeWindowState((event) => {
-        if (event.active && event.focused) {
-          TimeTracker.getInstance().resetTracker();
-        } else {
-          TimeTracker.getInstance().saveTimeDifference(context);
-        }
-      }),
-
-      vscode.window.onDidChangeActiveTextEditor(() => {
-        TimeTracker.getInstance().saveTimeDifference(context);
-        TimeTracker.getInstance().resetTracker();
-      }),
-
-      vscode.commands.registerCommand(
-        'vs-code-calendar.saveBeforeClose',
-        () => {
-          TimeTracker.getInstance().saveTimeDifference(context);
-        }
-      )
-    );
   }
 }
