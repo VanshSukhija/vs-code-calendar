@@ -74,6 +74,7 @@ async function createNewUser(
         response.json().then((data) => {
           const userData = data as { userId: string };
           extensionGlobalState['userId'] = userData.userId;
+          extensionGlobalState['userName'] = userName;
           console.log('User id:', userData.userId);
 
           vscode.window.showInformationMessage('Data sent successfully!');
@@ -98,6 +99,7 @@ async function createNewUser(
     });
 }
 
+// reset all trackers in the extension global state
 function resetExtensionGlobalState(context: vscode.ExtensionContext): void {
   const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
     extensionGlobalStateKey,
@@ -112,6 +114,7 @@ function resetExtensionGlobalState(context: vscode.ExtensionContext): void {
   context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
 }
 
+// send data to server every month
 async function sendDataToServer(
   context: vscode.ExtensionContext
 ): Promise<void> {
@@ -153,6 +156,7 @@ async function sendDataToServer(
     });
 }
 
+// get flags from server and update the extension settings every time the extension is activated
 async function updateFlagSettings(
   context: vscode.ExtensionContext
 ): Promise<void> {
@@ -274,6 +278,16 @@ export function pushCommands(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('vs-code-calendar.changeName', () =>
       setLocalUserName().then((userName) => {
+        const extensionGlobalState: ExtensionGlobalState =
+          context.globalState.get(
+            extensionGlobalStateKey,
+            Object() as ExtensionGlobalState
+          );
+        extensionGlobalState['userName'] = userName;
+        context.globalState.update(
+          extensionGlobalStateKey,
+          extensionGlobalState
+        );
         vscode.window.showInformationMessage(`Name changed to ${userName}`);
       })
     ),
