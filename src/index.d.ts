@@ -11,6 +11,10 @@ export interface ExtensionGlobalState {
   'terminal-count-tracker': CountTrackerDataObject[];
 }
 
+export interface ExtensionSettings {
+  [key: string]: string | number | boolean;
+}
+
 export interface TextDocumentLocal {
   uri: string;
   text: string;

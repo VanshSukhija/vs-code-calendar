@@ -10,12 +10,11 @@ export function activate(context: vscode.ExtensionContext) {
   console.log(
     'Congratulations, your extension "vs-code-calendar" is now active!'
   );
+  vscode.window.showInformationMessage('VS Code Calendar is active!');
 
   initExtensionGlobalState(context);
   pushCommands(context);
   initTrackers(context);
-
-  vscode.window.showInformationMessage('VS Code Calendar is active!');
 }
 
 // This method is called when your extension is deactivated
