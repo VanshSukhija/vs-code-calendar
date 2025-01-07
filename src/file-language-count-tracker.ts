@@ -4,19 +4,26 @@ import {
   FileLanguageCounter,
   ICountTracker,
 } from './count-tracker.d';
-import { extensionGlobalStateKey } from './utils/constants';
+import {
+  defaultModifyLineGoal,
+  extensionGlobalStateKey,
+} from './utils/constants';
 import { ExtensionGlobalState, TextDocumentLocal } from '.';
 
 export default class FileLanguageCountTracker implements ICountTracker {
   private static instance: FileLanguageCountTracker;
   private static lastSavedTextDocumentMap: Map<string, TextDocumentLocal>;
   public static trackerGlobalStateKey: string = 'file-language-count-tracker';
+  private statusBarLinesModifiedCounter: number;
+  private statusBarCounter: vscode.StatusBarItem | undefined;
 
   private constructor() {
     FileLanguageCountTracker.lastSavedTextDocumentMap = new Map<
       string,
       TextDocumentLocal
     >();
+
+    this.statusBarLinesModifiedCounter = 0;
   }
 
   public static getInstance(): FileLanguageCountTracker {
@@ -41,6 +48,28 @@ export default class FileLanguageCountTracker implements ICountTracker {
         vscode.window.activeTextEditor.document.uri.toString(),
         newTextDocument
       );
+    }
+
+    const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
+      extensionGlobalStateKey,
+      Object() as ExtensionGlobalState
+    );
+    const fileLanguageCountTrackerData: CountTrackerDataObject[] =
+      extensionGlobalState[FileLanguageCountTracker.trackerGlobalStateKey];
+
+    if (fileLanguageCountTrackerData) {
+      const today: string = new Date().toLocaleDateString();
+      const fileLanguageCountTrackerDataForToday:
+        | CountTrackerDataObject
+        | undefined = fileLanguageCountTrackerData.find(
+        (data) => data.date === today
+      );
+
+      if (fileLanguageCountTrackerDataForToday) {
+        fileLanguageCountTrackerDataForToday.languages?.forEach((language) => {
+          this.statusBarLinesModifiedCounter += language.linesModified;
+        });
+      }
     }
   }
 
@@ -99,6 +128,41 @@ export default class FileLanguageCountTracker implements ICountTracker {
     }
 
     context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
+  }
+
+  public startStatusBarCounter(context: vscode.ExtensionContext): void {
+    this.statusBarCounter = vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Left,
+      1000
+    );
+
+    const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
+      extensionGlobalStateKey,
+      Object() as ExtensionGlobalState
+    );
+    const dailyGoal = extensionGlobalState['dailyGoal'];
+
+    this.statusBarCounter.text = `$(edit) ${this.statusBarLinesModifiedCounter}/${dailyGoal}`;
+    this.statusBarCounter.tooltip = 'VS Code Calendar: Lines modified today';
+    // TODO: add statusBarCounter.command here
+
+    this.statusBarCounter.show();
+  }
+
+  public updateStatusBarCounter(
+    context: vscode.ExtensionContext,
+    moreLinesModified: number
+  ): void {
+    const extensionGlobalState: ExtensionGlobalState = context.globalState.get(
+      extensionGlobalStateKey,
+      Object() as ExtensionGlobalState
+    );
+    const dailyGoal = extensionGlobalState['dailyGoal'];
+
+    this.statusBarLinesModifiedCounter += moreLinesModified;
+    if (this.statusBarCounter) {
+      this.statusBarCounter.text = `$(edit) ${this.statusBarLinesModifiedCounter}/${dailyGoal}`;
+    }
   }
 
   private isNotebookDocument(
@@ -237,6 +301,8 @@ export default class FileLanguageCountTracker implements ICountTracker {
         lastSavedDocument,
         event
       );
+
+      this.updateStatusBarCounter(context, modifiedLines);
 
       FileLanguageCountTracker.getInstance().incrementModifiedLinesCounter(
         context,

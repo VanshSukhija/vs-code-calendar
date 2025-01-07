@@ -28,6 +28,10 @@
       {
         "command": "vs-code-calendar.sendDataToServer",
         "title": "VS Code Calendar: Send Data To Server"
+      },
+      {
+        "command": "vs-code-calendar.changeDailyGoal",
+        "title": "VS Code Calendar: Change Daily Goal"
       }
     ]
   },

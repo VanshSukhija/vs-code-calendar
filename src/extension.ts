@@ -1,8 +1,14 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { initExtensionGlobalState, initTrackers, pushCommands } from './init';
+import {
+  initExtensionGlobalState,
+  initTrackers,
+  pushCommands,
+  startStatusBarItems,
+} from './init';
 import { resetExtensionGlobalStateFlag } from './utils/flags';
+import { extensionGlobalStateKey, extensionMapKey } from './utils/constants';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -12,9 +18,15 @@ export function activate(context: vscode.ExtensionContext) {
   );
   vscode.window.showInformationMessage('VS Code Calendar is active!');
 
+  context.globalState.setKeysForSync([
+    extensionGlobalStateKey,
+    extensionMapKey,
+  ]);
+
   initExtensionGlobalState(context);
   pushCommands(context);
   initTrackers(context);
+  startStatusBarItems(context);
 }
 
 // This method is called when your extension is deactivated

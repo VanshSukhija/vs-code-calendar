@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { ExtensionGlobalState, ExtensionSettings } from '.';
+import { ExtensionGlobalState, ExtensionMap } from '.';
 import {
+  defaultModifyLineGoal,
   extensionGlobalStateKey,
-  extensionSettingsKey,
+  extensionMapKey,
 } from './utils/constants';
 import TimeTrackerController from './time-tracker-controller';
 import WorkspaceCountTracker from './workspace-count-tracker';
@@ -49,6 +50,35 @@ async function setLocalUserName(): Promise<string> {
     });
 }
 
+async function setDailyGoal(): Promise<number> {
+  let dailyGoal: number = -1;
+
+  return await vscode.window
+    .showInputBox({
+      title: 'VS Code Calendar: Please enter your daily goal',
+      placeHolder: '100',
+      validateInput: (value) => {
+        value = value.trim();
+        return isNaN(Number(value)) ? 'Daily goal must be a number' : null;
+      },
+    })
+    .then((value) => {
+      if (value) {
+        value = value.trim();
+        dailyGoal = Number(value);
+      }
+    })
+    .then(() => {
+      if (dailyGoal === -1) {
+        vscode.window.showInformationMessage(
+          'You can always change your daily goal using the command "VS Code Calendar: Change Daily Goal"'
+        );
+      }
+
+      return dailyGoal;
+    });
+}
+
 // create new user and register the name. User id is returned.
 async function createNewUser(
   context: vscode.ExtensionContext,
@@ -59,8 +89,6 @@ async function createNewUser(
     Object() as ExtensionGlobalState
   );
   const url: string = [process.env.SERVER_URL, 'user'].join('/');
-
-  console.log('Sending data to url:', url);
 
   await fetch(url, {
     method: 'POST',
@@ -132,8 +160,6 @@ async function sendDataToServer(
 
   const url: string = [process.env.SERVER_URL, 'user'].join('/');
 
-  console.log('Sending data to url:', url);
-
   await fetch(url, {
     method: 'PATCH',
     headers: {
@@ -160,13 +186,12 @@ async function sendDataToServer(
 async function updateFlagSettings(
   context: vscode.ExtensionContext
 ): Promise<void> {
-  const extensionSettings: ExtensionSettings = context.globalState.get(
-    extensionSettingsKey,
-    Object() as ExtensionSettings
+  const extensionSettings: ExtensionMap = context.globalState.get(
+    extensionMapKey,
+    Object() as ExtensionMap
   );
 
   const url: string = [process.env.SERVER_URL, 'flags'].join('/');
-  console.log('Getting flags from url:', url);
 
   await fetch(url)
     .then((response) => {
@@ -176,9 +201,7 @@ async function updateFlagSettings(
           flags.forEach((flag) => {
             extensionSettings[flag.flag] = flag.value;
           });
-          context.globalState.update(extensionSettingsKey, extensionSettings);
-
-          console.log('Flags updated:', flags);
+          context.globalState.update(extensionMapKey, extensionSettings);
         });
       } else {
         console.log('Failed to get flags from server');
@@ -192,14 +215,9 @@ async function updateFlagSettings(
 export function initExtensionGlobalState(
   context: vscode.ExtensionContext
 ): void {
-  context.globalState.setKeysForSync([
-    extensionGlobalStateKey,
-    extensionSettingsKey,
-  ]);
-
   if (startWithEmptyGlobalStateFlag) {
     context.globalState.update(extensionGlobalStateKey, undefined);
-    context.globalState.update(extensionSettingsKey, undefined);
+    context.globalState.update(extensionMapKey, undefined);
   }
 
   updateFlagSettings(context);
@@ -209,14 +227,14 @@ export function initExtensionGlobalState(
     Object() as ExtensionGlobalState
   );
 
-  const extensionSettings: ExtensionSettings = context.globalState.get(
-    extensionSettingsKey,
-    Object() as ExtensionSettings
+  const extensionSettings: ExtensionMap = context.globalState.get(
+    extensionMapKey,
+    Object() as ExtensionMap
   );
 
   if (!extensionSettings['lastSyncDate']) {
     extensionSettings['lastSyncDate'] = new Date().toLocaleDateString();
-    context.globalState.update(extensionSettingsKey, extensionSettings);
+    context.globalState.update(extensionMapKey, extensionSettings);
   } else if (
     new Date().getMonth() !==
     new Date(extensionSettings['lastSyncDate'] as string).getMonth()
@@ -224,7 +242,7 @@ export function initExtensionGlobalState(
     sendDataToServer(context)
       .then(() => {
         extensionSettings['lastSyncDate'] = new Date().toLocaleDateString();
-        context.globalState.update(extensionSettingsKey, extensionSettings);
+        context.globalState.update(extensionMapKey, extensionSettings);
       })
       .catch((error) => {
         console.error('Error:', error);
@@ -248,6 +266,11 @@ export function initExtensionGlobalState(
 
   if (!extensionGlobalState[TerminalCountTracker.trackerGlobalStateKey]) {
     extensionGlobalState[TerminalCountTracker.trackerGlobalStateKey] = [];
+    context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
+  }
+
+  if (!extensionGlobalState['dailyGoal']) {
+    extensionGlobalState['dailyGoal'] = defaultModifyLineGoal;
     context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
   }
 
@@ -297,9 +320,38 @@ export function pushCommands(context: vscode.ExtensionContext): void {
       async () => await sendDataToServer(context)
     ),
 
+    vscode.commands.registerCommand('vs-code-calendar.changeDailyGoal', () =>
+      setDailyGoal().then((dailyGoal) => {
+        if (dailyGoal === -1) {
+          return;
+        }
+
+        const extensionGlobalState: ExtensionGlobalState =
+          context.globalState.get(
+            extensionGlobalStateKey,
+            Object() as ExtensionGlobalState
+          );
+        extensionGlobalState['dailyGoal'] = dailyGoal;
+        context.globalState.update(
+          extensionGlobalStateKey,
+          extensionGlobalState
+        );
+
+        FileLanguageCountTracker.getInstance().updateStatusBarCounter(
+          context,
+          0
+        );
+
+        vscode.window.showInformationMessage(
+          `Daily goal changed to ${dailyGoal}`
+        );
+      })
+    ),
+
     vscode.commands.registerCommand('vs-code-calendar.saveBeforeClose', () => {
       const lastActiveTextEditor: vscode.TextEditor | undefined =
         TimeTrackerController.getInstance().getLastActiveTextEditor();
+
       if (lastActiveTextEditor) {
         TimeTrackerController.getTimeTrackers()
           .find((tracker) =>
@@ -310,6 +362,45 @@ export function pushCommands(context: vscode.ExtensionContext): void {
             lastActiveTextEditor.document.languageId
           );
       }
+
+      const extensionMap: ExtensionMap = context.globalState.get(
+        extensionMapKey,
+        Object() as ExtensionMap
+      );
+
+      TimeTrackerController.getInstance().saveTimeForToday();
+
+      extensionMap['statusBarClock'] = {
+        date: new Date().toLocaleDateString(),
+        trackedTime: TimeTrackerController.getInstance().savedTimeForToday,
+      };
+      context.globalState.update(extensionMapKey, extensionMap);
+
+      clearInterval(TimeTrackerController.getInstance().statusBarClockInterval);
+      clearTimeout(TimeTrackerController.getInstance().nextDayTimeout);
     })
   );
+}
+
+export function startStatusBarItems(context: vscode.ExtensionContext): void {
+  const extensionMap: ExtensionMap = context.globalState.get(
+    extensionMapKey,
+    Object() as ExtensionMap
+  );
+
+  if (
+    extensionMap &&
+    extensionMap['statusBarClock'] &&
+    extensionMap['statusBarClock'].date === new Date().toLocaleDateString()
+  ) {
+    // not getting to this block dont know why
+    TimeTrackerController.getInstance().savedTimeForToday =
+      extensionMap['statusBarClock'].timeTracked;
+    console.log(
+      'SavedTimeForToday:',
+      TimeTrackerController.getInstance().saveTimeForToday
+    );
+  }
+  TimeTrackerController.getInstance().startStatusBarClock();
+  FileLanguageCountTracker.getInstance().startStatusBarCounter(context);
 }

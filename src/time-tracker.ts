@@ -49,8 +49,10 @@ export default class TimeTracker implements ITimeTracker {
   }
 
   public resetTracker(): void {
-    this.startTime = new Date();
-    this.hasSavedTimeDifference = false;
+    if (this.hasSavedTimeDifference) {
+      this.startTime = new Date();
+      this.hasSavedTimeDifference = false;
+    }
   }
 
   private saveTimeDifferenceHelper(
