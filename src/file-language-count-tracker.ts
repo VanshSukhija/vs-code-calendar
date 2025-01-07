@@ -4,10 +4,7 @@ import {
   FileLanguageCounter,
   ICountTracker,
 } from './count-tracker.d';
-import {
-  defaultModifyLineGoal,
-  extensionGlobalStateKey,
-} from './utils/constants';
+import { extensionGlobalStateKey } from './utils/constants';
 import { ExtensionGlobalState, TextDocumentLocal } from '.';
 
 export default class FileLanguageCountTracker implements ICountTracker {
@@ -144,7 +141,6 @@ export default class FileLanguageCountTracker implements ICountTracker {
 
     this.statusBarCounter.text = `$(edit) ${this.statusBarLinesModifiedCounter}/${dailyGoal}`;
     this.statusBarCounter.tooltip = 'VS Code Calendar: Lines modified today';
-    // TODO: add statusBarCounter.command here
 
     this.statusBarCounter.show();
   }

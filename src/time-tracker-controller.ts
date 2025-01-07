@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import TimeTracker from './time-tracker';
-import { stat } from 'fs';
 
 export default class TimeTrackerController {
   public static trackerGlobalStateKey: string = 'time-tracker';
@@ -8,16 +7,14 @@ export default class TimeTrackerController {
   private static timeTrackers: TimeTracker[];
   private lastActiveTextEditor: vscode.TextEditor | undefined;
   private clockStartTime: Date;
-  private hasSavedTimeForToday: boolean;
-  public savedTimeForToday: number;
-  public nextDayTimeout: NodeJS.Timeout | undefined;
+  private hasSavedTimeForSession: boolean;
+  public savedTimeForSession: number;
   public statusBarClockInterval: NodeJS.Timeout | undefined;
 
   private constructor() {
     this.clockStartTime = new Date();
-    this.savedTimeForToday = 0;
-    this.hasSavedTimeForToday = false;
-    this.setNextDayTimeout();
+    this.savedTimeForSession = 0;
+    this.hasSavedTimeForSession = false;
     TimeTrackerController.timeTrackers = [];
     this.lastActiveTextEditor = vscode.window.activeTextEditor;
   }
@@ -51,8 +48,7 @@ export default class TimeTrackerController {
       vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1000);
 
     statusBarClock.text = this.getClockTime();
-    statusBarClock.tooltip = 'VS Code Calendar: Time tracked today';
-    // TODO: add statusBarClock.command here
+    statusBarClock.tooltip = 'VS Code Calendar: Current Session Time';
 
     this.statusBarClockInterval = setInterval(() => {
       statusBarClock.text = `$(watch) ` + this.getClockTime();
@@ -61,38 +57,20 @@ export default class TimeTrackerController {
     statusBarClock.show();
   }
 
-  private setNextDayTimeout(): void {
-    if (this.nextDayTimeout) {
-      clearTimeout(this.nextDayTimeout);
-    }
-    this.clockStartTime = new Date();
-    this.savedTimeForToday = 0;
-    const tomorrow = new Date(
-      this.clockStartTime.getFullYear(),
-      this.clockStartTime.getMonth(),
-      this.clockStartTime.getDate() + 1
-    );
-    this.nextDayTimeout = setTimeout(() => {
-      this.clockStartTime = new Date();
-      this.savedTimeForToday = 0;
-      this.setNextDayTimeout();
-    }, tomorrow.getTime() - this.clockStartTime.getTime());
-  }
-
-  public saveTimeForToday(): void {
-    if (this.hasSavedTimeForToday) {
+  public saveTimeForSession(): void {
+    if (this.hasSavedTimeForSession) {
       return;
     }
 
-    this.savedTimeForToday +=
+    this.savedTimeForSession +=
       new Date().getTime() - this.clockStartTime.getTime();
-    this.hasSavedTimeForToday = true;
+    this.hasSavedTimeForSession = true;
   }
 
   private getClockTime(): string {
     const time: number =
-      this.savedTimeForToday +
-      (!this.hasSavedTimeForToday
+      this.savedTimeForSession +
+      (!this.hasSavedTimeForSession
         ? new Date().getTime() - this.clockStartTime.getTime()
         : 0);
 
@@ -147,11 +125,11 @@ export default class TimeTrackerController {
       }),
 
       vscode.window.onDidChangeWindowState((state) => {
-        if (state.focused && this.hasSavedTimeForToday) {
+        if (state.focused && this.hasSavedTimeForSession) {
           this.clockStartTime = new Date();
-          this.hasSavedTimeForToday = false;
+          this.hasSavedTimeForSession = false;
         } else if (!state.focused) {
-          this.saveTimeForToday();
+          this.saveTimeForSession();
         }
 
         const tracker: TimeTracker | undefined =

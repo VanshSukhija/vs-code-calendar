@@ -110,7 +110,16 @@ export default class TimeTracker implements ITimeTracker {
       });
     }
 
-    context.globalState.update(extensionGlobalStateKey, extensionGlobalState);
+    context.globalState
+      .update(extensionGlobalStateKey, extensionGlobalState)
+      .then(() => {
+        console.log(
+          'Time difference saved successfully:',
+          date,
+          differenceInSeconds,
+          languageId
+        );
+      });
   }
 
   public saveTimeDifference(

@@ -363,44 +363,12 @@ export function pushCommands(context: vscode.ExtensionContext): void {
           );
       }
 
-      const extensionMap: ExtensionMap = context.globalState.get(
-        extensionMapKey,
-        Object() as ExtensionMap
-      );
-
-      TimeTrackerController.getInstance().saveTimeForToday();
-
-      extensionMap['statusBarClock'] = {
-        date: new Date().toLocaleDateString(),
-        trackedTime: TimeTrackerController.getInstance().savedTimeForToday,
-      };
-      context.globalState.update(extensionMapKey, extensionMap);
-
       clearInterval(TimeTrackerController.getInstance().statusBarClockInterval);
-      clearTimeout(TimeTrackerController.getInstance().nextDayTimeout);
     })
   );
 }
 
 export function startStatusBarItems(context: vscode.ExtensionContext): void {
-  const extensionMap: ExtensionMap = context.globalState.get(
-    extensionMapKey,
-    Object() as ExtensionMap
-  );
-
-  if (
-    extensionMap &&
-    extensionMap['statusBarClock'] &&
-    extensionMap['statusBarClock'].date === new Date().toLocaleDateString()
-  ) {
-    // not getting to this block dont know why
-    TimeTrackerController.getInstance().savedTimeForToday =
-      extensionMap['statusBarClock'].timeTracked;
-    console.log(
-      'SavedTimeForToday:',
-      TimeTrackerController.getInstance().saveTimeForToday
-    );
-  }
   TimeTrackerController.getInstance().startStatusBarClock();
   FileLanguageCountTracker.getInstance().startStatusBarCounter(context);
 }
