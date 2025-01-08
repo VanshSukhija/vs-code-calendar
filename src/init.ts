@@ -349,21 +349,16 @@ export function pushCommands(context: vscode.ExtensionContext): void {
     ),
 
     vscode.commands.registerCommand('vs-code-calendar.saveBeforeClose', () => {
-      const lastActiveTextEditor: vscode.TextEditor | undefined =
-        TimeTrackerController.getInstance().getLastActiveTextEditor();
-
-      if (lastActiveTextEditor) {
-        TimeTrackerController.getTimeTrackers()
-          .find((tracker) =>
-            tracker.isTextEditorOfThisWorkspace(lastActiveTextEditor)
-          )
-          ?.saveTimeDifference(
-            context,
-            lastActiveTextEditor.document.languageId
-          );
+      if (TimeTrackerController.getInstance().statusBarClockInterval) {
+        clearInterval(
+          TimeTrackerController.getInstance().statusBarClockInterval
+        );
       }
-
-      clearInterval(TimeTrackerController.getInstance().statusBarClockInterval);
+      if (TimeTrackerController.getInstance().saveTimeDifferenceInterval) {
+        clearInterval(
+          TimeTrackerController.getInstance().saveTimeDifferenceInterval
+        );
+      }
     })
   );
 }

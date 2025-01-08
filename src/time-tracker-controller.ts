@@ -10,6 +10,7 @@ export default class TimeTrackerController {
   private hasSavedTimeForSession: boolean;
   public savedTimeForSession: number;
   public statusBarClockInterval: NodeJS.Timeout | undefined;
+  public saveTimeDifferenceInterval: NodeJS.Timeout | undefined;
 
   private constructor() {
     this.clockStartTime = new Date();
@@ -41,6 +42,7 @@ export default class TimeTrackerController {
     });
 
     this.subscribeToEvents(context);
+    this.startSaveTimeDifferenceInterval(context);
   }
 
   public startStatusBarClock(): void {
@@ -65,6 +67,30 @@ export default class TimeTrackerController {
     this.savedTimeForSession +=
       new Date().getTime() - this.clockStartTime.getTime();
     this.hasSavedTimeForSession = true;
+  }
+
+  private startSaveTimeDifferenceInterval(
+    context: vscode.ExtensionContext
+  ): void {
+    if (this.saveTimeDifferenceInterval) {
+      clearInterval(this.saveTimeDifferenceInterval);
+    }
+
+    this.saveTimeDifferenceInterval = setInterval(() => {
+      if (this.lastActiveTextEditor) {
+        const currentTimeTracker: TimeTracker | undefined =
+          TimeTrackerController.timeTrackers.find((tracker) =>
+            tracker.isTextEditorOfThisWorkspace(this.lastActiveTextEditor)
+          );
+        if (currentTimeTracker) {
+          currentTimeTracker.saveTimeDifference(
+            context,
+            this.lastActiveTextEditor.document.languageId
+          );
+          currentTimeTracker.resetTracker();
+        }
+      }
+    }, 60000);
   }
 
   private getClockTime(): string {
