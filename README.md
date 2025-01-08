@@ -1,71 +1,50 @@
-# vs-code-calendar README
+# VS Code Calendar
 
-This is the README for your extension "vs-code-calendar". After writing up a brief description, we recommend including the following sections.
+A VS Code extension that tracks your coding activity and provides detailed statistics and wrapped at the end of year :)
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Tracks time spent coding in different languages
+- Monitors lines of code modified
+- Counts workspace and file usage
+- Records terminal commands executed
+- Shows real-time status bar with coding time and lines modified
 
-For example if there is an image subfolder under your extension project workspace:
+## Commands
 
-\!\[feature X\]\(images/feature-x.png\)
+The extension provides the following commands (accessible via Command Palette):
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- `VS Code Calendar: Change Name` - Change your display name
+- `VS Code Calendar: Change Daily Goal` - Set a new daily goal for lines modified
+- `VS Code Calendar: Send Data To Server` - Manually sync your coding activity data
+
+## Status Bar Items
+
+- `$(watch) HH:MM:SS` - Shows your active coding session time
+- `$(edit) XX/YY` - Shows lines modified today / daily goal
+
+## Settings
+
+The extension automatically tracks:
+
+- Time spent in each workspace
+- Lines of code modified per language
+- Number of times different workspaces are opened
+- Terminal usage and commands executed 
+- Daily coding goals and progress
+
+## Data Privacy
+
+- Data is synced to server monthly (requires opt-in with username)
+- You can manually trigger data sync using the "Send Data To Server" command
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- VS Code version 1.95.3 or higher
+- An internet connection for data syncing
 
-## Extension Settings
+## Installation
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+Install through the VS Code Marketplace or download the VSIX file from the [releases page](https://github.com/VanshSukhija/vs-code-calendar/releases).
 
-For example:
-
-This extension contributes the following settings:
-
-- `myExtension.enable`: Enable/disable this extension.
-- `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-- [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-- Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-- Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-- Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-- [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-- [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+After installation, the extension will automatically start tracking your coding activity when you open VS Code.
