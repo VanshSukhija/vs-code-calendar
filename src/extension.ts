@@ -7,8 +7,11 @@ import {
   pushCommands,
   startStatusBarItems,
 } from './init';
-import { resetExtensionGlobalStateFlag } from './utils/flags';
-import { extensionGlobalStateKey, extensionMapKey } from './utils/constants';
+import {
+  extensionGlobalStateDumpKey,
+  extensionGlobalStateKey,
+  extensionMapKey,
+} from './utils/constants';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -21,6 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.globalState.setKeysForSync([
     extensionGlobalStateKey,
     extensionMapKey,
+    extensionGlobalStateDumpKey,
   ]);
 
   initExtensionGlobalState(context);
@@ -32,10 +36,4 @@ export function activate(context: vscode.ExtensionContext) {
 // This method is called when your extension is deactivated
 export function deactivate() {
   vscode.commands.executeCommand('vs-code-calendar.saveBeforeClose');
-
-  if (resetExtensionGlobalStateFlag) {
-    vscode.commands.executeCommand(
-      'vs-code-calendar.resetExtensionGlobalState'
-    );
-  }
 }

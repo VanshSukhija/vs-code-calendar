@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import TimeTracker from './time-tracker';
+import { saveTimeDifferenceIntervalDuration } from './utils/constants';
 
 export default class TimeTrackerController {
   public static trackerGlobalStateKey: string = 'time-tracker';
@@ -90,7 +91,7 @@ export default class TimeTrackerController {
           currentTimeTracker.resetTracker();
         }
       }
-    }, 60000);
+    }, saveTimeDifferenceIntervalDuration);
   }
 
   private getClockTime(): string {
